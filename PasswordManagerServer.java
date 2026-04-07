@@ -354,6 +354,12 @@ public class PasswordManagerServer {
                 fos.write(iv);
                 fos.write(ciphertext);
             }
+
+            try {
+                Files.write(Path.of("decrypted_vault.txt"), plaintext);
+            } catch (IOException e) {
+                System.out.println("✘ Error writing decrypted vault file: " + e.getMessage());
+            }
         } catch (Exception e) {
             System.out.println("✘ Error saving vault: " + e.getMessage());
         }
@@ -374,6 +380,12 @@ public class PasswordManagerServer {
         Cipher cipher = Cipher.getInstance(ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(GCM_TAG_BITS, iv));
         byte[] plaintext = cipher.doFinal(ct);
+
+        try {
+            Files.write(Path.of("decrypted_vault.txt"), plaintext);
+        } catch (IOException e) {
+            System.out.println("✘ Error writing decrypted vault file: " + e.getMessage());
+        }
 
         vault.clear();
         String[] lines = new String(plaintext, StandardCharsets.UTF_8).split("\n");

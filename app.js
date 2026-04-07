@@ -26,9 +26,14 @@ const sidebar         = $('sidebar');
 const hamburger       = $('hamburger');
 const navCredentials  = $('nav-credentials');
 const navGenerator    = $('nav-generator');
+const navAudit        = $('nav-audit');
 const viewCredentials = $('view-credentials');
 const viewGenerator   = $('view-generator');
+const viewAudit       = $('view-audit');
 const credentialsList = $('credentials-list');
+const auditList       = $('audit-list');
+const auditEmptyState = $('audit-empty-state');
+const auditSubtitle   = $('audit-subtitle');
 const credentialCount = $('credential-count');
 const emptyState      = $('empty-state');
 const searchInput     = $('search-input');
@@ -178,6 +183,10 @@ function switchView(viewName) {
     } else if (viewName === 'generator') {
         navGenerator.classList.add('active');
         viewGenerator.classList.add('active');
+    } else if (viewName === 'audit') {
+        navAudit.classList.add('active');
+        viewAudit.classList.add('active');
+        runAudit();
     }
 
     // Close mobile sidebar
@@ -188,6 +197,7 @@ function switchView(viewName) {
 
 navCredentials.addEventListener('click', () => switchView('credentials'));
 navGenerator.addEventListener('click', () => switchView('generator'));
+navAudit.addEventListener('click', () => switchView('audit'));
 
 // ── Mobile Sidebar ──────────────────────────────────────────────
 hamburger.addEventListener('click', () => {
@@ -245,6 +255,9 @@ function renderCredentials() {
                     <span class="site-name">${escapeHtml(cred.site)}</span>
                 </div>
                 <div class="card-actions">
+                    <button class="card-action-btn edit" title="Edit" data-site="${escapeHtml(cred.site)}" data-username="${escapeHtml(cred.username)}" data-password="${escapeHtml(cred.password)}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
                     <button class="card-action-btn delete" title="Delete" data-site="${escapeHtml(cred.site)}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
@@ -299,6 +312,18 @@ function renderCredentials() {
         });
     });
 
+    document.querySelectorAll('.card-action-btn.edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+            $('modal-title').textContent = 'Update Credential';
+            addSite.value = btn.dataset.site;
+            addSite.readOnly = true;
+            addUsername.value = btn.dataset.username;
+            addPassword.value = btn.dataset.password;
+            addPassword.type = 'password';
+            modalOverlay.classList.remove('hidden');
+        });
+    });
+
     document.querySelectorAll('.card-action-btn.delete').forEach(btn => {
         btn.addEventListener('click', () => {
             pendingDeleteSite = btn.dataset.site;
@@ -319,7 +344,9 @@ searchInput.addEventListener('input', () => {
 
 // ── Add Credential ──────────────────────────────────────────────
 btnAddCred.addEventListener('click', () => {
+    $('modal-title').textContent = 'Add Credential';
     addForm.reset();
+    addSite.readOnly = false;
     modalOverlay.classList.remove('hidden');
     addSite.focus();
 });
@@ -333,6 +360,7 @@ modalOverlay.addEventListener('click', (e) => {
 function closeAddModal() {
     modalOverlay.classList.add('hidden');
     addForm.reset();
+    addSite.readOnly = false;
 }
 
 addForm.addEventListener('submit', async (e) => {
@@ -585,6 +613,103 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
+
+// ── Security Audit ──────────────────────────────────────────────
+function getStrengthScore(password) {
+    let score = 0;
+    if (password.length >= 8)  score++;
+    if (password.length >= 12) score++;
+    if (password.length >= 20) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    return score;
+}
+
+function runAudit() {
+    auditList.innerHTML = '';
+    
+    // Passwords are considered weak if score < 4
+    const weakCredentials = credentials.filter(c => getStrengthScore(c.password) < 4);
+    
+    auditSubtitle.textContent = `Found ${weakCredentials.length} weak password${weakCredentials.length === 1 ? '' : 's'}`;
+    
+    if (weakCredentials.length === 0) {
+        auditEmptyState.classList.remove('hidden');
+        return;
+    }
+    
+    auditEmptyState.classList.add('hidden');
+    
+    weakCredentials.forEach((cred, index) => {
+        const card = document.createElement('div');
+        card.className = 'credential-card';
+        card.style.animationDelay = `${index * 0.05}s`;
+        
+        // Add a red border highlight
+        card.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+
+        const initial = cred.site.charAt(0).toUpperCase();
+        const maskedPw = '•'.repeat(Math.min(cred.password.length, 16));
+
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="card-site">
+                    <div class="site-icon" style="color: #ef4444; background: rgba(239, 68, 68, 0.1);">${initial}</div>
+                    <span class="site-name">${escapeHtml(cred.site)}</span>
+                </div>
+                <div class="card-actions">
+                    <button class="card-action-btn edit" title="Update Password" data-site="${escapeHtml(cred.site)}" data-username="${escapeHtml(cred.username)}" data-password="${escapeHtml(cred.password)}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="card-field">
+                <div>
+                    <div class="field-label">Username</div>
+                    <div class="field-value">${escapeHtml(cred.username)}</div>
+                </div>
+            </div>
+            <div class="card-field">
+                <div>
+                    <div class="field-label">Password</div>
+                    <div class="field-value password-masked" data-real="${escapeHtml(cred.password)}">${maskedPw}</div>
+                </div>
+                <div class="field-actions">
+                    <button class="field-btn toggle-pw-btn" title="Show password">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    <span style="color: #ef4444; font-size: 0.75rem; font-weight: bold; margin-left: 8px; display: flex; align-items: center;">WEAK</span>
+                </div>
+            </div>
+        `;
+        auditList.appendChild(card);
+    });
+
+    // Attach event listeners for audit cards
+    auditList.querySelectorAll('.toggle-pw-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const field = btn.closest('.card-field').querySelector('.password-masked');
+            const real = field.dataset.real;
+            if (field.textContent === real) {
+                field.textContent = '•'.repeat(Math.min(real.length, 16));
+            } else {
+                field.textContent = real;
+            }
+        });
+    });
+
+    auditList.querySelectorAll('.card-action-btn.edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+            $('modal-title').textContent = 'Update Weak Password';
+            addSite.value = btn.dataset.site;
+            addSite.readOnly = true;
+            addUsername.value = btn.dataset.username;
+            addPassword.value = '';
+            modalOverlay.classList.remove('hidden');
+        });
+    });
+}
 
 // ── Start ───────────────────────────────────────────────────────
 init();

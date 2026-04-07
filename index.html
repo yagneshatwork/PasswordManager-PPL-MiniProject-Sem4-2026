@@ -83,6 +83,10 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
                     <span>Generator</span>
                 </button>
+                <button class="nav-item" data-view="audit" id="nav-audit">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                    <span>Security Audit</span>
+                </button>
             </nav>
             <div class="sidebar-footer">
                 <button class="nav-item" id="btn-save-vault">
@@ -185,6 +189,25 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Security Audit View -->
+            <div id="view-audit" class="view">
+                <div class="view-header">
+                    <div>
+                        <h2 class="view-title">Security Audit</h2>
+                        <p class="view-subtitle" id="audit-subtitle">Checking your vault's health...</p>
+                    </div>
+                </div>
+                <div id="audit-list" class="credentials-grid">
+                    <!-- Weak credentials will be injected here -->
+                </div>
+                <div id="audit-empty-state" class="empty-state hidden">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                    <h3 style="color: #10b981;">All Good!</h3>
+                    <p>No weak passwords found in your vault. Keep it up!</p>
+                </div>
+            </div>
+
         </main>
     </div>
 
