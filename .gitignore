@@ -1,0 +1,5 @@
+*.class
+vault.enc
+decrypted_vault.txt
+.vscode/
+.idea/
