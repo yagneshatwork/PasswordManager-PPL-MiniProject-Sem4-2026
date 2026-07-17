@@ -1,4 +1,4 @@
-# Java Web Password Manager
+# Java Web Password Manager     
   
 A secure, web-based password manager featuring a lightweight Java HTTP server backend and a responsive, modern HTML/CSS/JS frontend.
 
